@@ -20,6 +20,7 @@ type Args struct {
 	RmService    bool
 	RegistryCred string
 	EnvVars      []string
+	Constraints  []string
 }
 
 func main() {
@@ -30,6 +31,7 @@ func main() {
 	flag.BoolVar(&jaasCmd.RmService, "rm", false, "remove service after completion")
 	flag.IntVar(&jaasCmd.Timeout, "timeout", 60, "ticks until we time out the service - default is 60 seconds")
 	flag.StringVar(&jaasCmd.RegistryCred, "registryAuth", "", "pass your registry authentication")
+	flag.StringSliceVar(&jaasCmd.Constraints, "constraint", nil, "Placement constraints (e.g. node.labels.key==value)")
 	flag.Parse()
 	jaasCmd.Image = flag.Arg(0)
 
@@ -64,6 +66,12 @@ func main() {
 
 	if jaasCmd.RegistryCred != "" {
 		createOptions.EncodedRegistryAuth = jaasCmd.RegistryCred
+	}
+
+	placement := &swarm.Placement{}
+	if jaasCmd.Constraints != nil {
+		placement.Constraints = jaasCmd.Constraints
+		spec.TaskTemplate.Placement = placement
 	}
 
 	createResponse, _ := c.ServiceCreate(context.Background(), spec, createOptions)
