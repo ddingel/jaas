@@ -10,7 +10,7 @@ COPY vendor vendor
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags "-s -w" -installsuffix cgo -o /root/jaas
 
-FROM alpine:3.6
+FROM alpine:3.7
 WORKDIR /root/
 COPY --from=build /root/jaas /root/jaas
 
