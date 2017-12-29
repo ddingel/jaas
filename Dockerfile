@@ -5,9 +5,7 @@ MAINTAINER alexellis2@gmail.com
 RUN mkdir -p /go/src/github.com/alexellis2/jaas
 WORKDIR /go/src/github.com/alexellis2/jaas
 
-COPY app.go         .
-COPY show_tasks.go  .
-COPY poll.go        .
+COPY app.go show_tasks.go poll.go ./
 COPY vendor vendor
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags "-s -w" -installsuffix cgo -o /root/jaas
