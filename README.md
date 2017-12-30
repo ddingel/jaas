@@ -49,10 +49,8 @@ Now test `jaas` with `jaas --help`
 * Run your first one-shot container:
 
 ```
-# jaas -rm -image alexellis2/cows:latest
+# jaas alexellis2/cows:latest
 ```
-
-The `-rm` flag removes the Swarm service that was used to run your container. 
 
 > The exit code from your container will also be available, you can check it with `echo $?`
 
@@ -61,15 +59,15 @@ The `-rm` flag removes the Swarm service that was used to run your container.
 If you aren't interested in the output logs then run it with the `--showlogs=false` override:
 
 ```
-# jaas -image alexellis2/cows:latest --showlogs=false
+# jaas --showlogs=false alexellis2/cows:latest
 ```
 
 * Removing service after completion
 
-To remove the service after it completes, run with the `-rm` flag:
+To remove the service after it completes, run with the `--rm` flag:
 
 ```
-# jaas -image alexellis2/href-counter:latest --env url=http://blog.alexellis.io/ --showlogs=true
+# jaas --env url=http://blog.alexellis.io/ alexellis2/href-counter:latest
 
 Service created: peaceful_shirley (uva6bcqyubm1b4c80dghjhb44)
 ID:  uva6bcqyubm1b4c80dghjhb44  Update at:  2017-03-14 22:19:54.381973142 +0000 UTC
@@ -89,7 +87,7 @@ Removing service...
 
 You can use `jaas` with Docker images in private registries or registries which require authentication.
 
-Just run `docker login` then pass the `-registryAuth` parameter and the encoded string you find in `~/.docker/config.json`.
+Just run `docker login` then pass the `--registryAuth` parameter and the encoded string you find in `~/.docker/config.json`.
 
 If you want to encode a string manually then do the following: 
 
@@ -100,7 +98,7 @@ $ export auth='{
     "email" : "my@email",
     "serveraddress" : "my.reg.domain"
   }'
-$ jaas -registryAuth="`echo $auth | base64`" -image my.reg.domain/hello-world:latest
+$ jaas --registryAuth="`echo $auth | base64`" my.reg.domain/hello-world:latest
 ```
 
 *Notes on images*
@@ -115,7 +113,7 @@ You can also run `jaas` in a container, but the syntax becomes slightly more ver
 
 ```
 # docker run -ti -v /var/run/docker.sock:/var/run/docker.sock \
-  alexellis2/jaas -image alexellis2/cows:latest
+  alexellis2/jaas alexellis2/cows:latest
 ```
 
 ### Roadmap:

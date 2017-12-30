@@ -1,57 +1,40 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
+	flag "github.com/spf13/pflag"
 
 	"golang.org/x/net/context"
 )
 
-type listFlag []string
-
-func (i *listFlag) String() string {
-	str := ""
-	for _, v := range *i {
-		str += v
-	}
-	return str
-}
-
-func (i *listFlag) Set(value string) error {
-	*i = append(*i, value)
-	return nil
+type Args struct {
+	Image        string
+	Timeout      int
+	Showlogs     bool
+	Network      string
+	RmService    bool
+	RegistryCred string
+	EnvVars      []string
 }
 
 func main() {
-	var image string
-	var timeout int
-	var showlogs bool
-	var network string
-	var removeService bool
-	var registry string
-
-	var envVars listFlag
-
-	flag.Var(&envVars, "env", "environmental variables")
-
-	flag.StringVar(&image, "image", "", "Docker image name")
-	flag.StringVar(&network, "network", "", "Docker swarm network name")
-
-	flag.BoolVar(&showlogs, "showlogs", true, "show logs from stdout")
-	flag.BoolVar(&removeService, "rm", false, "remove service after completion")
-	flag.IntVar(&timeout, "timeout", 60, "ticks until we time out the service - default is 60 seconds")
-
-	flag.StringVar(&registry, "registryAuth", "", "pass your registry authentication")
-
+	var jaasCmd = &Args{}
+	flag.StringSliceVarP(&jaasCmd.EnvVars, "env", "e", nil, "environmental variables")
+	flag.StringVar(&jaasCmd.Network, "network", "", "Docker swarm network name")
+	flag.BoolVar(&jaasCmd.Showlogs, "showlogs", true, "show logs from stdout")
+	flag.BoolVar(&jaasCmd.RmService, "rm", false, "remove service after completion")
+	flag.IntVar(&jaasCmd.Timeout, "timeout", 60, "ticks until we time out the service - default is 60 seconds")
+	flag.StringVar(&jaasCmd.RegistryCred, "registryAuth", "", "pass your registry authentication")
 	flag.Parse()
+	jaasCmd.Image = flag.Arg(0)
 
-	if len(image) == 0 {
-		panic(fmt.Sprintf("No images provided"))
+	if jaasCmd.Image == "" {
+		panic(fmt.Sprintf("No Image provided"))
 	}
 
 	c, err := client.NewEnvClient()
@@ -65,26 +48,22 @@ func main() {
 		panic(versionErr)
 	}
 
-	if showlogs {
-		if versionInfo.Experimental == false {
-			fmt.Println("Experimental daemon required to display service logs, falling back to no log display.")
-			showlogs = false
-		}
+	if jaasCmd.Showlogs && versionInfo.Experimental == false {
+		panic("daemon required to display service logs, falling back to no log display.")
 	}
 
-	spec := makeSpec(image, &envVars)
-	if len(network) > 0 {
+	spec := makeSpec(jaasCmd.Image, jaasCmd.EnvVars)
+	if jaasCmd.Network != "" {
 		nets := []swarm.NetworkAttachmentConfig{
-			swarm.NetworkAttachmentConfig{Target: network},
+			swarm.NetworkAttachmentConfig{Target: jaasCmd.Network},
 		}
 		spec.Networks = nets
 	}
 
 	createOptions := types.ServiceCreateOptions{}
 
-	if len(registry) > 0 {
-		createOptions.EncodedRegistryAuth = registry
-		fmt.Println("Using auth: " + registry)
+	if jaasCmd.RegistryCred != "" {
+		createOptions.EncodedRegistryAuth = jaasCmd.RegistryCred
 	}
 
 	createResponse, _ := c.ServiceCreate(context.Background(), spec, createOptions)
@@ -93,12 +72,12 @@ func main() {
 	service, _, _ := c.ServiceInspectWithRaw(context.Background(), createResponse.ID, opts)
 	fmt.Printf("Service created: %s (%s)\n", service.Spec.Name, createResponse.ID)
 
-	taskExitCode := pollTask(c, createResponse.ID, timeout, showlogs, removeService)
+	taskExitCode := pollTask(c, createResponse.ID, jaasCmd.Timeout, jaasCmd.Showlogs, jaasCmd.RmService)
 	os.Exit(taskExitCode)
 
 }
 
-func makeSpec(image string, envVars *listFlag) swarm.ServiceSpec {
+func makeSpec(image string, envVars []string) swarm.ServiceSpec {
 	max := uint64(1)
 
 	spec := swarm.ServiceSpec{
@@ -109,7 +88,7 @@ func makeSpec(image string, envVars *listFlag) swarm.ServiceSpec {
 			},
 			ContainerSpec: &swarm.ContainerSpec{
 				Image: image,
-				Env:   *envVars,
+				Env:   envVars,
 			},
 		},
 	}
