@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/namesgenerator"
 
 	"golang.org/x/net/context"
 )
@@ -87,7 +88,10 @@ func main() {
 		fmt.Println("Using auth: " + registry)
 	}
 
-	createResponse, _ := c.ServiceCreate(context.Background(), spec, createOptions)
+	createResponse, err := c.ServiceCreate(context.Background(), spec, createOptions)
+	if err != nil {
+		panic(err)
+	}
 	opts := types.ServiceInspectOptions{InsertDefaults: true}
 
 	service, _, _ := c.ServiceInspectWithRaw(context.Background(), createResponse.ID, opts)
@@ -113,5 +117,6 @@ func makeSpec(image string, envVars *listFlag) swarm.ServiceSpec {
 			},
 		},
 	}
+	spec.Name = "jaas_" + namesgenerator.GetRandomName(0)
 	return spec
 }
