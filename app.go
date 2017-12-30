@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/docker/docker/api/types"
@@ -52,28 +51,21 @@ func main() {
 	flag.Parse()
 
 	if len(image) == 0 {
-		fmt.Println("Provide an image name with -image")
-		return
+		panic(fmt.Sprintf("No images provided"))
 	}
 
-	var c *client.Client
-	var err error
-	c, err = client.NewEnvClient()
+	c, err := client.NewEnvClient()
 	if err != nil {
-		log.Fatal("Is the Docker Daemon running?")
-		return
+		panic(err)
 	}
 
 	// Check that experimental mode is enabled on the daemon, fall back to no logging if not
 	versionInfo, versionErr := c.ServerVersion(context.Background())
 	if versionErr != nil {
-		log.Fatal("Is the Docker Daemon running?")
-
-		return
+		panic(versionErr)
 	}
 
 	if showlogs {
-
 		if versionInfo.Experimental == false {
 			fmt.Println("Experimental daemon required to display service logs, falling back to no log display.")
 			showlogs = false
