@@ -1,9 +1,10 @@
 sudo: required
-
 services:
-      - docker
-before_install:
-    - docker pull golang:1.9.2
-
-script:
-    - make docker
+  - docker
+jobs:
+  include:
+    - stage: linux_x86
+      script:
+        - docker pull golang:1.9.2
+        - docker pull alpine:3.7
+        - make docker
