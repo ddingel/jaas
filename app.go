@@ -22,21 +22,26 @@ type Args struct {
 	EnvVars      []string
 }
 
-func main() {
+func parseAndValidate() *Args {
+	flags := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	var jaasCmd = &Args{}
-	flag.StringSliceVarP(&jaasCmd.EnvVars, "env", "e", nil, "environmental variables")
-	flag.StringVar(&jaasCmd.Network, "network", "", "Docker swarm network name")
-	flag.BoolVar(&jaasCmd.Showlogs, "showlogs", true, "show logs from stdout")
-	flag.BoolVar(&jaasCmd.RmService, "rm", false, "remove service after completion")
-	flag.IntVar(&jaasCmd.Timeout, "timeout", 60, "ticks until we time out the service - default is 60 seconds")
-	flag.StringVar(&jaasCmd.RegistryCred, "registryAuth", "", "pass your registry authentication")
-	flag.Parse()
-	jaasCmd.Image = flag.Arg(0)
+	flags.StringSliceVarP(&jaasCmd.EnvVars, "env", "e", nil, "environmental variables")
+	flags.StringVar(&jaasCmd.Network, "network", "", "Docker swarm network name")
+	flags.BoolVar(&jaasCmd.Showlogs, "showlogs", true, "show logs from stdout")
+	flags.BoolVar(&jaasCmd.RmService, "rm", false, "remove service after completion")
+	flags.IntVar(&jaasCmd.Timeout, "timeout", 60, "ticks until we time out the service - default is 60 seconds")
+	flags.StringVar(&jaasCmd.RegistryCred, "registryAuth", "", "pass your registry authentication")
+	flags.Parse(os.Args[1:])
+	jaasCmd.Image = flags.Arg(0)
 
 	if jaasCmd.Image == "" {
 		panic(fmt.Sprintf("No Image provided"))
 	}
+	return jaasCmd
+}
 
+func main() {
+	jaasCmd := parseAndValidate()
 	c, err := client.NewEnvClient()
 	if err != nil {
 		panic(err)
