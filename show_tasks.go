@@ -24,10 +24,10 @@ func showTasks(c *client.Client, id string, showLogs, removeService bool) (int, 
 	var done bool
 	for _, v := range val {
 		if v.Status.State == swarm.TaskStateComplete {
-			fmt.Println("\n")
+			fmt.Println("")
 			fmt.Printf("Exit code: %d\n", v.Status.ContainerStatus.ExitCode)
 			fmt.Printf("State: %s\n", v.Status.State)
-			fmt.Println("\n")
+			fmt.Println("")
 
 			exitCode = v.Status.ContainerStatus.ExitCode
 			if showLogs {
