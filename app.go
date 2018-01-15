@@ -43,6 +43,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	c.NegotiateAPIVersion(context.Background())
 
 	// Check that experimental mode is enabled on the daemon, fall back to no logging if not
 	versionInfo, versionErr := c.ServerVersion(context.Background())
