@@ -36,23 +36,27 @@ func main() {
 	jaasCmd.Image = flag.Arg(0)
 
 	if jaasCmd.Image == "" {
-		panic(fmt.Sprintf("No Image provided"))
+		fmt.Println("No Image provided")
+		os.Exit(1)
 	}
 
 	c, err := client.NewEnvClient()
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	c.NegotiateAPIVersion(context.Background())
 
 	// Check that experimental mode is enabled on the daemon, fall back to no logging if not
 	versionInfo, versionErr := c.ServerVersion(context.Background())
 	if versionErr != nil {
-		panic(versionErr)
+		fmt.Println(versionErr)
+		os.Exit(1)
 	}
 
 	if jaasCmd.Showlogs && versionInfo.Experimental == false {
-		panic("daemon required to display service logs, falling back to no log display.")
+		fmt.Println("Experimental Daemon needed.")
+		os.Exit(1)
 	}
 
 	spec := makeSpec(jaasCmd.Image, jaasCmd.EnvVars)
