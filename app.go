@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/docker/cli/cli/command/service"
+	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
@@ -21,6 +23,7 @@ type Args struct {
 	RegistryCred string
 	EnvVars      []string
 	Constraints  []string
+	Secrets      []string
 }
 
 func main() {
@@ -32,6 +35,7 @@ func main() {
 	flag.IntVar(&jaasCmd.Timeout, "timeout", 60, "ticks until we time out the service - default is 60 seconds")
 	flag.StringVar(&jaasCmd.RegistryCred, "registryAuth", "", "pass your registry authentication")
 	flag.StringSliceVar(&jaasCmd.Constraints, "constraint", nil, "Placement constraints (e.g. node.labels.key==value)")
+	flag.StringSliceVar(&jaasCmd.Secrets, "secret", nil, "secrets")
 	flag.Parse()
 	jaasCmd.Image = flag.Arg(0)
 
@@ -39,7 +43,6 @@ func main() {
 		fmt.Println("No Image provided")
 		os.Exit(1)
 	}
-
 	c, err := client.NewEnvClient()
 	if err != nil {
 		fmt.Println(err)
@@ -79,7 +82,25 @@ func main() {
 		spec.TaskTemplate.Placement = placement
 	}
 
-	createResponse, _ := c.ServiceCreate(context.Background(), spec, createOptions)
+	if jaasCmd.Secrets != nil {
+		var secOpt opts.SecretOpt
+		for _, s := range jaasCmd.Secrets {
+			secOpt.Set(s)
+		}
+
+		if secrets, err := service.ParseSecrets(c, secOpt.Value()); err == nil {
+			spec.TaskTemplate.ContainerSpec.Secrets = secrets
+		} else {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+
+	createResponse, err := c.ServiceCreate(context.Background(), spec, createOptions)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	opts := types.ServiceInspectOptions{InsertDefaults: true}
 
 	service, _, _ := c.ServiceInspectWithRaw(context.Background(), createResponse.ID, opts)
