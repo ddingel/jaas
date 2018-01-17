@@ -4,7 +4,7 @@
 package main
 
 import (
-	"github.com/alexellis/jaas/cmd"
+	"github.com/ddingel/jaas/cmd"
 )
 
 func main() {
